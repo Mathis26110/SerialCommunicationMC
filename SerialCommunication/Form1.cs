@@ -241,6 +241,7 @@ namespace SerialCommunication
         {
             timerOefening3.Enabled = tabControl.SelectedIndex == 3;
             timerOefening4.Enabled = tabControl.SelectedIndex == 4;
+            timerOefening5.Enabled = tabControl.SelectedIndex == 5;
         }
 
         private void timerOefening3_Tick(object sender, EventArgs e)
@@ -296,6 +297,48 @@ namespace SerialCommunication
 
                     int value = Int32.Parse(antwoord);
                     labelAnalog0.Text = value.ToString();
+                }
+            }
+            catch (Exception exception)
+            {
+                labelStatus.Text = "Error: " + exception.Message;
+                serialPortArduino.Close();
+                radioButtonVerbonden.Checked = false;
+                buttonConnect.Text = "Connect";
+            }
+        }
+
+        private void timerOefening5_Tick(object sender, EventArgs e)
+        {
+            try
+            {
+                if (serialPortArduino.IsOpen)
+                {
+                    serialPortArduino.ReadExisting();
+                    serialPortArduino.WriteLine("get a0");
+                    string antwoordA0 = serialPortArduino.ReadLine().TrimEnd().Substring(4);
+                    int rawA0 = Int32.Parse(antwoordA0);
+
+                    double gewensteTemp = (0.0391 * rawA0) + 5;
+                    labelGewensteTemp.Text = gewensteTemp.ToString("0.0") + " °C";
+
+                    serialPortArduino.WriteLine("get a1");
+                    string antwoordA1 = serialPortArduino.ReadLine().TrimEnd().Substring(4);
+                    int rawA1 = Int32.Parse(antwoordA1);
+
+                    double huidigeTemp = (0.4887 * rawA1) + 0;
+                    labelHuidigeTemp.Text = huidigeTemp.ToString("0.0") + " °C";
+
+                    string ledCommando;
+                    if (huidigeTemp < gewensteTemp)
+                    {
+                        ledCommando = "set d2 high";
+                    }
+                    else
+                    {
+                        ledCommando = "set d2 low";
+                    }
+                    serialPortArduino.WriteLine(ledCommando);
                 }
             }
             catch (Exception exception)
